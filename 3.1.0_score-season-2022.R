@@ -21,7 +21,7 @@ version = list.files(here("model-files","model-versions")) %>%
 
 load(file = here("model-files","model-versions",version)) #model_obj
 #load(file = here("output","v1.24_model_gbm.RData")) #maybe better
-load(file = here("data","player_data_2023.Rdata"))
+load(file = here("data","player_data_2022.Rdata"))
 load(file = here("model-files","preprocessing_recipe.RData"))
 
 # Load model variables ----
@@ -57,39 +57,39 @@ model_vars <- c(
 # Apply to 2023 season data ----
 
 ## * Prep data ----
-team_totals <- player_data_2023 %>% 
+team_totals <- player_data_2022 %>% 
   group_by(match_id, player_team) %>% 
   summarise_at(.vars = names(.)[27:78], sum) %>% 
   setNames(c(names(.)[1:2],paste0('team.', names(.)[3:ncol(.)])))
 
-match_totals <- player_data_2023 %>% 
+match_totals <- player_data_2022 %>% 
   group_by(match_id) %>% 
   summarise_at(.vars = names(.)[27:78], sum) %>% 
   setNames(c(names(.)[1],paste0('match.', names(.)[2:ncol(.)])))
 
-player_data_2023 %>% 
+player_data_2022 %>% 
   left_join(.,team_totals,by=c("match_id","player_team")) %>% 
   left_join(.,match_totals,by=c("match_id")) ->
-  player_data_2023
+  player_data_2022
 
-team_portions <- player_data_2023[27:78] / player_data_2023[,substr(names(player_data_2023),1,5)=="team."]
-match_portions <- player_data_2023[27:78] / player_data_2023[,substr(names(player_data_2023),1,6)=="match."]
+team_portions <- player_data_2022[27:78] / player_data_2022[,substr(names(player_data_2022),1,5)=="team."]
+match_portions <- player_data_2022[27:78] / player_data_2022[,substr(names(player_data_2022),1,6)=="match."]
 
 # assign new variable names
 team_portions %>% setNames(object = ., nm = paste0('team_pct.', names(.)[1:ncol(.)])) -> team_portions
 match_portions %>% setNames(object = ., nm = paste0('match_pct.', names(.)[1:ncol(.)])) -> match_portions
 
 # combine
-player_data_2023.cleaned <- cbind(player_data_2023,team_portions,match_portions) %>% 
+player_data_2022.cleaned <- cbind(player_data_2022,team_portions,match_portions) %>% 
   mutate(team_result = ifelse(match_winner==player_team, match_margin, -1*match_margin))
 
-player_data_2023.cleaned$player_position.cln <- case_when(player_data_2023.cleaned$player_position %in% c('FF','CHF') ~ 'KEYFWD',
-                                                          player_data_2023.cleaned$player_position %in% c('SUB','INT') ~ 'BENCH',
-                                                          player_data_2023.cleaned$player_position %in% c('FB','CHB') ~ 'KEYBCK',
-                                                          player_data_2023.cleaned$player_position %in% c('RK') ~ 'RUCK',
+player_data_2022.cleaned$player_position.cln <- case_when(player_data_2022.cleaned$player_position %in% c('FF','CHF') ~ 'KEYFWD',
+                                                          player_data_2022.cleaned$player_position %in% c('SUB','INT') ~ 'BENCH',
+                                                          player_data_2022.cleaned$player_position %in% c('FB','CHB') ~ 'KEYBCK',
+                                                          player_data_2022.cleaned$player_position %in% c('RK') ~ 'RUCK',
                                                           TRUE ~ "GENERAL")
 
-ds_in <- player_data_2023.cleaned %>% 
+ds_in <- player_data_2022.cleaned %>% 
   mutate(id = row_number()) %>% 
   dplyr::select(id, all_of(model_vars), brownlow_votes)
 
@@ -102,7 +102,7 @@ oot_prediction <- predict(final_model_fit, oot_processed) %>%
 oot_out <- oot_prediction %>%
   dplyr::select(id,.pred) %>%
   rename(predicted_votes_raw = .pred) %>% 
-  left_join(.,(player_data_2023.cleaned %>% mutate(id = row_number())),by=c("id")) %>% 
+  left_join(.,(player_data_2022.cleaned %>% mutate(id = row_number())),by=c("id")) %>% 
   dplyr::select(id:player_position,predicted_votes_raw) %>% 
   mutate(name = paste(player_first_name,player_last_name,sep=" "),
          season = substr(match_date,1,4))
@@ -115,7 +115,7 @@ load(file = here("model-files","model-pr-adjustments","v2_fit.rdata"))
 load(file = here("model-files","model-pr-adjustments","v3_fit.rdata"))
 
 ## * Apply to 2023 data ----
-out_2023_matches <- oot_out %>% 
+out_2022_matches <- oot_out %>% 
   mutate(v3.prob = predict(v3.fit,data.frame(x=.$predicted_votes_raw))) %>% 
   mutate(v3.prob = case_when(predicted_votes_raw > 3.5 ~ 0.975, predicted_votes_raw < -0.05 ~ 0, T ~ v3.prob) # that's probably fine
   ) %>% 
@@ -124,9 +124,9 @@ out_2023_matches <- oot_out %>%
 # okay, so will need to normalise...
 # Which should just be fine when doing the monte carlo simulation.
 
-for (i in 1:10000) {
+for (i in 1:250) {
   
-  votes3 <- out_2023_matches %>% 
+  votes3 <- out_2022_matches %>% 
     uncount(round(v3.prob*100)) %>%
     mutate(rn = runif(nrow(.))) %>% 
     group_by(match_id) %>% 
@@ -134,7 +134,7 @@ for (i in 1:10000) {
     mutate(votes = 3) %>% 
     dplyr::select(match_id,name,votes)
     
-  votes2 <- out_2023_matches %>% 
+  votes2 <- out_2022_matches %>% 
     filter(!paste0(match_id,name) %in% (votes3 %>% mutate(x = paste0(match_id,name)) %>% pull(x))) %>% 
     uncount(round(v3.prob*100)) %>%
     mutate(rn = runif(nrow(.))) %>% 
@@ -143,7 +143,7 @@ for (i in 1:10000) {
     mutate(votes = 2) %>% 
     dplyr::select(match_id,name,votes)
   
-  votes1 <- out_2023_matches %>% 
+  votes1 <- out_2022_matches %>%
     filter(!paste0(match_id,name) %in% (votes3 %>% mutate(x = paste0(match_id,name)) %>% pull(x))) %>% 
     filter(!paste0(match_id,name) %in% (votes2 %>% mutate(x = paste0(match_id,name)) %>% pull(x))) %>% 
     uncount(round(v3.prob*100)) %>%
@@ -158,7 +158,7 @@ for (i in 1:10000) {
   if(i==1){votes_out <- votes}
   if(i>1){votes_out <- rbind(votes_out,votes)}
   
-  if(i/1000 == round(i/1000)){print(paste0(i," simulations completed at: ",Sys.time()))}
+  if(i/10 == round(i/10)){print(paste0(i," simulations completed at: ",Sys.time()))}
   
 }
 
@@ -175,12 +175,12 @@ monte.carlo.votesummary <- votes_out %>%
             p95 = quantile(total.votes, probs = 0.95),
             win.perc = sum(win) / n())
   
-save(monte.carlo.votesummary, file = here("output","montecarlosummary.RData"))
+
 
 # Calculate Votes ----
 
 ## * Apply votes using monte carlo method ----
-player_match_combos <- out_2023_matches %>% dplyr::select(name,match_id) %>% mutate(votes = 0, n = NA)
+player_match_combos <- out_2022_matches %>% dplyr::select(name,match_id) %>% mutate(votes = 0, n = NA)
 
 n_sims = max(votes_out$sim.no, na.rm = T)
 
@@ -221,18 +221,4 @@ output <- most_likely_321 %>%
   left_join(.,votesummary,by=c("name")) %>% 
   arrange(-Total)
 
-save(output, file = here("output","output.RData"))
 
-playerlist <- player_data_2023.cleaned %>% 
-  mutate(name = paste(player_first_name,player_last_name,sep=" ")) %>% 
-  select(player_id,name,player_team) %>% 
-  unique()
-
-teams.top3 <- monte.carlo.votesummary %>%
-  left_join(.,playerlist,by=c("name")) %>% 
-  arrange(-mdn.votes) %>% 
-  group_by(player_team) %>% 
-  mutate(rank = row_number()) %>% 
-  filter(rank <= 3)
-
-save(teams.top3, file = here("output","output_teams.RData"))

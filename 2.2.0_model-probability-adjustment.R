@@ -2,8 +2,8 @@
 # Load packages ----
 library(tidyverse)
 library(here)
-library(DescTools)
-library(fitdistrplus)
+#library(DescTools)
+#library(fitdistrplus)
 
 
 # Correct for continuous regression prediction, for discrete outcome ----
@@ -190,9 +190,9 @@ test %>%
   ggplot(aes(x = value, y = values, fill = v.prob)) + geom_line()
 
 
-save(v1.fit, file = here("2023 Model","model-files","model-pr-adjustments","v1_fit.rdata"))
-save(v2.fit, file = here("2023 Model","model-files","model-pr-adjustments","v2_fit.rdata"))
-save(v3.fit, file = here("2023 Model","model-files","model-pr-adjustments","v3_fit.rdata"))
+save(v1.fit, file = here("model-files","model-pr-adjustments","v1_fit.rdata"))
+save(v2.fit, file = here("model-files","model-pr-adjustments","v2_fit.rdata"))
+save(v3.fit, file = here("model-files","model-pr-adjustments","v3_fit.rdata"))
 
 
 # Maybe I just need the 3 vote pdf.

@@ -4,7 +4,7 @@ library(tidyverse)
 library(here)
 
 # Load data ----
-load(file = here("2023 Model","data","player_data_full.Rdata"))
+load(file = here("data","player_data_full.Rdata"))
 
 # Wrangle data into model-able dataset with normalised and cleaned variables ----
 # Note. look at normalised values, for example, disposals as percentage of teams disposals...
@@ -50,4 +50,4 @@ player_data_full.cleaned$player_position.cln <- case_when(player_data_full.clean
                                                           TRUE ~ "GENERAL")
 
 # Save data ----
-save(player_data_full.cleaned, file = here("2023 Model","data","player_data_full.cleaned.Rdata"))
+save(player_data_full.cleaned, file = here("data","player_data_full.cleaned.Rdata"))

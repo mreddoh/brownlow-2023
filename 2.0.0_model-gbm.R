@@ -12,7 +12,7 @@ all_cores <- parallel::detectCores(logical = FALSE)
 registerDoParallel(cores = all_cores)
 
 # Load data ----
-load(file = here("2023 Model","data","player_data_full.cleaned.Rdata"))
+load(file = here("data","player_data_full.cleaned.Rdata"))
 
 # Begin modeling ----
 
@@ -74,7 +74,7 @@ preprocessing_recipe <- recipes::recipe(brownlow_votes ~ ., data = training(ds_s
   recipes::step_nzv(all_nominal()) %>% # remove no variance predictors which provide no predictive information 
   prep()
 
-save(preprocessing_recipe, file = here("2023 Model","model-files","preprocessing_recipe.RData"))
+save(preprocessing_recipe, file = here("model-files","preprocessing_recipe.RData"))
 
 ## * Apply our previously defined preprocessing recipe with bake() ----
 ds_cv_folds <- recipes::bake(preprocessing_recipe, new_data = training(ds_split)) %>%  
@@ -147,15 +147,15 @@ train_prediction %>%
 
 final_model_fit %>% vip:::vip(., num_features = 30)
 
-version = list.files(here("2023 Model","model-files","model-versions")) %>% 
+version = list.files(here("model-files","model-versions")) %>% 
   tibble() %>% 
   filter(substr(.,1,1)=="v") %>% 
   mutate(value = as.numeric(substr(.,2,5))) %>% 
   summarise(max = paste0("v",format(max(value) + 0.01, nsmall = 2),"_model_gbm.RData")) %>% 
   pull(max)
 
-#save(final_model_fit, file = here("2023 Model","model-files","model-versions","1.00_model_gbm.RData"))
-save(final_model_fit, file = here("2023 Model","model-files","model-versions",version))
+#save(final_model_fit, file = here("model-files","model-versions","1.00_model_gbm.RData"))
+save(final_model_fit, file = here("model-files","model-versions",version))
 
 
 

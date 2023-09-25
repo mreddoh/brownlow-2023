@@ -1,0 +1,8 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+**/scripts/scraper.R
+**/99.0.0_output-to-s3.R
+**/data/

@@ -19,8 +19,8 @@ player_data_partial %>% filter(str_starts(match_round, "^[0-9]")) %>% mutate(id 
 
 
 # Save files ----
-save(player_data_2023, file = here("2023 Model","data","player_data_2023.Rdata"))
-save(player_data_2022, file = here("2023 Model","data","player_data_2022.Rdata"))
-save(player_data_full, file = here("2023 Model","data","player_data_full.Rdata"))
-save(player_data_partial, file = here("2023 Model","data","player_data_partial.Rdata"))
+save(player_data_2023, file = here("data","player_data_2023.Rdata"))
+save(player_data_2022, file = here("data","player_data_2022.Rdata"))
+save(player_data_full, file = here("data","player_data_full.Rdata"))
+save(player_data_partial, file = here("data","player_data_partial.Rdata"))
 
